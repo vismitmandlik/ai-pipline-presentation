@@ -510,11 +510,11 @@ export default function PipelineViewer({ selectedPhase, onSelectPhase, animation
         </motion.div>
         <h2 className="text-5xl md:text-6xl font-black leading-tight">
           <span className="bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-            Four Phases.
+            One Seamless Pipeline.
           </span>
           <br />
           <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            One Seamless Pipeline.
+            Zero Config. Full Visibility
           </span>
         </h2>
         <p className="text-slate-400 max-w-2xl mx-auto text-lg">
