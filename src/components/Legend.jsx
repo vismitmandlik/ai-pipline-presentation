@@ -3,69 +3,41 @@ import { motion } from 'framer-motion';
 
 export default function Legend() {
   const items = [
-    {
-      label: 'Phase Flow',
-      description: 'Forward progress through 4 sequential phases',
-      icon: '→',
-      color: 'text-blue-400',
-    },
-    {
-      label: 'Feedback Loop',
-      description: 'Iteration back to Phase 1 or 3 based on test failure',
-      icon: '↩',
-      color: 'text-red-400',
-    },
-    {
-      label: 'Animated Dots',
-      description: 'Shows active data flow through connections',
-      icon: '●',
-      color: 'text-cyan-400',
-    },
-    {
-      label: 'Interactive Nodes',
-      description: 'Click to expand and see detailed information',
-      icon: '◆',
-      color: 'text-purple-400',
-    },
+    { label: 'Sequential Flow', description: 'Progress through 4 phases', icon: '→', color: 'text-blue-400', bg: 'from-blue-500/20 to-cyan-500/20' },
+    { label: 'Interactive', description: 'Click to expand details', icon: '◆', color: 'text-purple-400', bg: 'from-purple-500/20 to-pink-500/20' },
+    { label: 'Live Flow', description: 'Animated data pulses', icon: '●', color: 'text-emerald-400', bg: 'from-emerald-500/20 to-green-500/20' },
+    { label: 'Hover Connections', description: 'See linked components', icon: '◈', color: 'text-amber-400', bg: 'from-amber-500/20 to-orange-500/20' },
   ];
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, x: -10 },
-    visible: { opacity: 1, x: 0 },
-  };
-
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-    >
-      {items.map((item) => (
-        <motion.div
-          key={item.label}
-          variants={itemVariants}
-          className="flex items-start gap-3"
-        >
-          <div className={`text-2xl flex-shrink-0 ${item.color}`}>
-            {item.icon}
-          </div>
-          <div>
-            <div className="font-semibold text-slate-200">{item.label}</div>
-            <div className="text-sm text-slate-400 mt-1">{item.description}</div>
-          </div>
-        </motion.div>
-      ))}
-    </motion.div>
+    <div>
+      <div className="text-center mb-6">
+        <h3 className="text-sm font-bold tracking-widest uppercase text-slate-400">Legend & Interactions</h3>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {items.map((item, i) => (
+          <motion.div
+            key={item.label}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.1 }}
+            whileHover={{ y: -4, scale: 1.02 }}
+            className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${item.bg} border border-white/10 p-4 backdrop-blur-md`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`text-3xl ${item.color}`}>{item.icon}</div>
+              <div>
+                <div className="font-bold text-white text-sm">{item.label}</div>
+                <div className="text-xs text-slate-400 mt-0.5">{item.description}</div>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+      <div className="text-center mt-8 text-xs text-slate-500">
+        Built with React • Framer Motion • Tailwind CSS
+      </div>
+    </div>
   );
 }

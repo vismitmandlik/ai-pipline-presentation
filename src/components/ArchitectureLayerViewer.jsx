@@ -1,295 +1,272 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import LayerCard from './LayerCard';
-import LayerConnection from './LayerConnection';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const ARCHITECTURE_DATA = [
+const LAYERS = [
   {
-    id: 'layer-commands',
-    name: 'Layer 1: Commands',
-    description: 'User-facing slash commands that delegate work to agents',
+    id: 'commands',
+    name: 'Commands',
+    subtitle: 'User-facing slash commands',
     emoji: '⌘',
-    color: 'from-blue-500 to-blue-600',
+    gradient: 'from-blue-500 via-cyan-500 to-teal-500',
+    glow: 'rgba(59, 130, 246, 0.4)',
     items: [
-      { id: 'cmd-code', name: '/start-code', description: 'Add detection signals', icon: '💻' },
-      { id: 'cmd-setup', name: '/start-environment-setup', description: 'Provision environment', icon: '⚙️' },
-      { id: 'cmd-test', name: '/start-test', description: 'Validate detection', icon: '✅' },
-      { id: 'cmd-research', name: '/start-research', description: 'Research patterns', icon: '🔬' },
-      { id: 'cmd-list', name: '/list-languages', description: 'Coverage status', icon: '📋' },
+      { id: 'cmd-code', name: '/start-code', description: 'Add detection signals', icon: '💻', invokes: 'agent-code' },
+      { id: 'cmd-setup', name: '/start-environment-setup', description: 'Provision environment', icon: '⚙️', invokes: 'agent-setup' },
+      { id: 'cmd-test', name: '/start-test', description: 'Validate detection', icon: '✅', invokes: 'agent-test' },
+      { id: 'cmd-research', name: '/start-research <lang>', description: 'Research patterns for a language', icon: '🔬', invokes: 'agent-research' },
+      { id: 'cmd-list', name: '/list-languages', description: 'Coverage status', icon: '📋', invokes: 'agent-lister' },
     ],
   },
   {
-    id: 'layer-agents',
-    name: 'Layer 2: Agents',
-    description: 'Detailed procedural logic that executes phases and coordinates the pipeline',
+    id: 'agents',
+    name: 'Agents',
+    subtitle: 'Execution logic & orchestration',
     emoji: '🤖',
-    color: 'from-purple-500 to-purple-600',
+    gradient: 'from-purple-500 via-fuchsia-500 to-pink-500',
+    glow: 'rgba(168, 85, 247, 0.4)',
     items: [
-      { id: 'agent-code', name: 'add-detect-language-code', description: 'Phase 3: Gap analysis & signal addition', icon: '🧩' },
-      { id: 'agent-setup', name: 'environment-setup', description: 'Phase 2: OS detection & provisioning', icon: '🏗️' },
-      { id: 'agent-test', name: 'test-language-detection', description: 'Phase 4: Binary validation', icon: '🔍' },
-      { id: 'agent-research', name: 'deployment-researcher', description: 'Phase 1: Pattern research', icon: '📚' },
-      { id: 'agent-lister', name: 'language-lister', description: 'Coverage reporting', icon: '📊' },
-      { id: 'agent-infra', name: 'environment-infra-setup', description: 'Infrastructure provisioning', icon: '🔧' },
-      { id: 'agent-app', name: 'environment-app-setup', description: 'Application deployment', icon: '🚀' },
+      { id: 'agent-code', name: 'add-detect-language-code', description: 'Phase 3: Gap analysis & signal addition', icon: '🧩', invokes: 'skill-detect' },
+      { id: 'agent-setup', name: 'environment-setup', description: 'Phase 2: OS detection & provisioning', icon: '🏗️', invokes: 'skill-tomcat' },
+      { id: 'agent-test', name: 'test-language-detection', description: 'Phase 4: Binary validation', icon: '🔍', invokes: null },
+      { id: 'agent-research', name: 'deployment-researcher', description: 'Phase 1: Pattern research', icon: '📚', invokes: 'skill-detect' },
+      { id: 'agent-lister', name: 'language-lister', description: 'Coverage reporting', icon: '📊', invokes: null },
+      { id: 'agent-infra', name: 'environment-infra-setup', description: 'Infrastructure provisioning', icon: '🔧', invokes: 'skill-infra' },
+      { id: 'agent-app', name: 'environment-app-setup', description: 'Application deployment', icon: '🚀', invokes: 'skill-tomcat' },
     ],
   },
   {
-    id: 'layer-skills',
-    name: 'Layer 3: Skills',
-    description: 'Reusable patterns for detection signals and deployment variants',
+    id: 'skills',
+    name: 'Skills',
+    subtitle: 'Reusable knowledge patterns',
     emoji: '📖',
-    color: 'from-green-500 to-green-600',
+    gradient: 'from-emerald-500 via-green-500 to-lime-500',
+    glow: 'rgba(16, 185, 129, 0.4)',
     items: [
-      { id: 'skill-detect', name: 'detect-language/SKILL.md', description: 'Signal catalogue across 5 stages', icon: '🎯' },
-      { id: 'skill-tomcat-linux', name: 'tomcat-linux-systemd', description: 'Tomcat on Linux deployment', icon: '🐱' },
-      { id: 'skill-springboot', name: 'springboot-jar-*', description: 'Spring Boot deployment variants', icon: '🍃' },
-      { id: 'skill-aspnet', name: 'aspnetcore-*', description: 'ASP.NET Core variants', icon: '.️⃣' },
+      { id: 'skill-detect', name: 'detect-language', description: 'Signal catalogue across 5 detection stages', icon: '🎯' },
+      { id: 'skill-tomcat', name: 'tomcat-linux-systemd', description: 'Apache Tomcat on Linux', icon: '🐱' },
+      { id: 'skill-springboot', name: 'springboot-jar-*', description: 'Spring Boot variants', icon: '🍃' },
+      { id: 'skill-aspnet', name: 'aspnetcore-*', description: 'ASP.NET Core variants', icon: '🎨' },
       { id: 'skill-wildfly', name: 'jboss-wildfly-*', description: 'JBoss WildFly deployment', icon: '🐺' },
-      { id: 'skill-infra', name: 'environment-setup/*', description: 'Infrastructure setup utilities', icon: '⚡' },
+      { id: 'skill-infra', name: 'environment-setup/*', description: 'Infrastructure helpers', icon: '⚡' },
     ],
   },
 ];
-
-const CONNECTIONS = [
-  {
-    from: 'cmd-code',
-    to: 'agent-code',
-    label: 'invokes',
-  },
-  {
-    from: 'cmd-setup',
-    to: 'agent-setup',
-    label: 'invokes',
-  },
-  {
-    from: 'cmd-test',
-    to: 'agent-test',
-    label: 'invokes',
-  },
-  {
-    from: 'cmd-research',
-    to: 'agent-research',
-    label: 'invokes',
-  },
-  {
-    from: 'agent-code',
-    to: 'skill-detect',
-    label: 'reads',
-  },
-  {
-    from: 'agent-setup',
-    to: 'skill-tomcat-linux',
-    label: 'uses',
-  },
-  {
-    from: 'agent-setup',
-    to: 'skill-springboot',
-    label: 'uses',
-  },
-  {
-    from: 'agent-research',
-    to: 'skill-detect',
-    label: 'creates',
-  },
-];
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.15,
-      delayChildren: 0.2,
-    },
-  },
-};
-
-const layerVariants = {
-  hidden: { opacity: 0, x: -20 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.5 } },
-};
 
 export default function ArchitectureLayerViewer({ animationActive }) {
+  const [hoveredItem, setHoveredItem] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
+
+  const getConnectedIds = (itemId) => {
+    const connected = new Set([itemId]);
+    LAYERS.forEach((layer) => {
+      layer.items.forEach((item) => {
+        if (item.id === itemId && item.invokes) connected.add(item.invokes);
+        if (item.invokes === itemId) connected.add(item.id);
+      });
+    });
+    return connected;
+  };
+
+  const activeItemId = hoveredItem || selectedItem;
+  const connectedIds = activeItemId ? getConnectedIds(activeItemId) : null;
 
   return (
     <div className="space-y-12">
-      {/* Overview */}
+      {/* Hero */}
       <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center py-8"
       >
-        <motion.h2 variants={layerVariants} className="text-2xl font-bold mb-2">
-          3-Layer Architecture Model
-        </motion.h2>
-        <motion.p variants={layerVariants} className="text-slate-300 max-w-3xl">
-          Separation of concerns: Commands are thin wrappers, Agents contain execution logic,
-          Skills encode reusable knowledge that can be shared across projects.
-        </motion.p>
-      </motion.div>
-
-      {/* 3-Layer Diagram */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="space-y-8"
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {ARCHITECTURE_DATA.map((layer, idx) => (
-            <motion.div
-              key={layer.id}
-              variants={layerVariants}
-              className="space-y-4"
-            >
-              {/* Layer Header */}
-              <div className={`rounded-lg p-4 bg-gradient-to-r ${layer.color} bg-opacity-10 border border-current border-opacity-30`}>
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-3xl">{layer.emoji}</span>
-                  <h3 className="text-lg font-bold">{layer.name}</h3>
-                </div>
-                <p className="text-sm text-slate-400">{layer.description}</p>
-              </div>
-
-              {/* Items */}
-              <div className="space-y-3">
-                {layer.items.map((item) => (
-                  <LayerCard
-                    key={item.id}
-                    item={item}
-                    layerColor={layer.color}
-                    isSelected={selectedItem?.id === item.id}
-                    onSelect={() => setSelectedItem(selectedItem?.id === item.id ? null : item)}
-                  />
-                ))}
-              </div>
-            </motion.div>
-          ))}
+        <div className="inline-block px-4 py-1 rounded-full bg-white/5 border border-white/10 text-xs tracking-widest uppercase text-slate-400 font-semibold mb-4">
+          Architecture Model
         </div>
-
-        {/* Connections SVG */}
-        <svg
-          className="w-full h-96 pointer-events-none mt-8"
-          style={{ minHeight: '300px' }}
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <marker
-              id="arrowhead-connection"
-              markerWidth="10"
-              markerHeight="10"
-              refX="9"
-              refY="3"
-              orient="auto"
-            >
-              <polygon points="0 0, 10 3, 0 6" fill="#a78bfa" />
-            </marker>
-          </defs>
-
-          {/* Simplified connection visualization */}
-          <text x="50%" y="20" textAnchor="middle" fill="#9ca3af" fontSize="14">
-            Commands invoke Agents • Agents use Skills • Skills drive phases
-          </text>
-        </svg>
+        <h2 className="text-5xl md:text-6xl font-black leading-tight mb-4">
+          <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-emerald-400 bg-clip-text text-transparent">
+            Three Layers
+          </span>
+        </h2>
+        <p className="text-slate-400 max-w-2xl mx-auto text-lg">
+          Hover over any component to see connections across layers.
+          Commands invoke Agents. Agents use Skills.
+        </p>
       </motion.div>
 
-      {/* Detailed View */}
-      {selectedItem && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          className="bg-slate-800 rounded-xl p-8 border border-slate-600"
-        >
-          <div className="flex items-start gap-4">
-            <div className="text-4xl">{selectedItem.icon}</div>
-            <div className="flex-1">
-              <h3 className="text-2xl font-bold mb-2">{selectedItem.name}</h3>
-              <p className="text-slate-300 mb-4">{selectedItem.description}</p>
-
-              <div className="grid grid-cols-2 gap-4 mt-6">
-                <div className="bg-slate-700/50 rounded-lg p-4">
-                  <div className="text-slate-400 text-sm font-semibold mb-2">Purpose</div>
-                  <p className="text-slate-300 text-sm">
-                    {selectedItem.description}
-                  </p>
-                </div>
-                <div className="bg-slate-700/50 rounded-lg p-4">
-                  <div className="text-slate-400 text-sm font-semibold mb-2">Related To</div>
-                  <p className="text-slate-300 text-sm">
-                    Part of the modular architecture supporting all 4 phases
-                  </p>
+      {/* Layers */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {LAYERS.map((layer, layerIdx) => (
+          <motion.div
+            key={layer.id}
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: layerIdx * 0.2 }}
+            className="relative"
+          >
+            {/* Layer header */}
+            <div className="relative mb-6">
+              <div
+                className={`absolute -inset-4 bg-gradient-to-br ${layer.gradient} opacity-20 blur-2xl rounded-3xl`}
+              />
+              <div className="relative rounded-2xl bg-slate-900/80 backdrop-blur-xl border border-white/10 p-5">
+                <div className="flex items-center gap-4">
+                  <motion.div
+                    animate={animationActive ? { rotate: [0, 10, -10, 0] } : {}}
+                    transition={{ duration: 4, repeat: Infinity, delay: layerIdx * 0.5 }}
+                    className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${layer.gradient} flex items-center justify-center text-3xl shadow-xl`}
+                    style={{ boxShadow: `0 10px 40px ${layer.glow}` }}
+                  >
+                    {layer.emoji}
+                  </motion.div>
+                  <div>
+                    <div className="text-[10px] font-bold tracking-widest uppercase text-slate-500">
+                      Layer {layerIdx + 1}
+                    </div>
+                    <h3 className={`text-2xl font-black bg-gradient-to-r ${layer.gradient} bg-clip-text text-transparent`}>
+                      {layer.name}
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">{layer.subtitle}</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </motion.div>
-      )}
 
-      {/* Data Flow Explanation */}
+            {/* Items */}
+            <div className="space-y-3">
+              {layer.items.map((item, i) => {
+                const isConnected = connectedIds && connectedIds.has(item.id);
+                const isDimmed = connectedIds && !connectedIds.has(item.id);
+                const isActive = activeItemId === item.id;
+
+                return (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{
+                      opacity: isDimmed ? 0.25 : 1,
+                      x: 0,
+                      scale: isActive ? 1.02 : 1,
+                    }}
+                    transition={{ delay: layerIdx * 0.2 + i * 0.05 }}
+                    whileHover={{ x: 4, scale: 1.02 }}
+                    onHoverStart={() => setHoveredItem(item.id)}
+                    onHoverEnd={() => setHoveredItem(null)}
+                    onClick={() => setSelectedItem(selectedItem === item.id ? null : item.id)}
+                    className="relative cursor-pointer"
+                  >
+                    {/* Glow */}
+                    {isActive && (
+                      <motion.div
+                        layoutId="itemGlow"
+                        className={`absolute -inset-1 bg-gradient-to-br ${layer.gradient} rounded-2xl blur-md opacity-50`}
+                      />
+                    )}
+
+                    <div
+                      className={`relative rounded-xl border backdrop-blur-md p-4 transition-all ${
+                        isActive
+                          ? 'border-white/30 bg-white/10'
+                          : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="text-2xl flex-shrink-0">{item.icon}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-sm text-white truncate">
+                            {item.name}
+                          </div>
+                          <div className="text-xs text-slate-400 mt-0.5 line-clamp-2">
+                            {item.description}
+                          </div>
+                        </div>
+                        {isConnected && activeItemId !== item.id && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0 mt-2"
+                            style={{ boxShadow: '0 0 10px rgba(16, 185, 129, 0.8)' }}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Flow arrow between layers */}
+            {layerIdx < LAYERS.length - 1 && (
+              <div className="hidden lg:flex absolute top-1/2 -right-4 -translate-y-1/2 items-center z-10 pointer-events-none">
+                <motion.div
+                  animate={animationActive ? { x: [0, 8, 0], opacity: [0.3, 1, 0.3] } : {}}
+                  transition={{ duration: 2, repeat: Infinity, delay: layerIdx * 0.5 }}
+                  className="text-3xl text-white/40"
+                >
+                  →
+                </motion.div>
+              </div>
+            )}
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Data flow example */}
       <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="bg-slate-800 rounded-xl p-8 border border-slate-600 space-y-6"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="relative rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-slate-900/80 via-slate-900/60 to-slate-900/80 backdrop-blur-xl p-8"
       >
-        <h3 className="text-xl font-bold">Data Flow Example: /start-code java</h3>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
 
-        <div className="space-y-4">
-          {[
-            {
-              step: 1,
-              layer: 'Commands',
-              action: 'User types /start-code java',
-              detail: 'Command validates "java" is a real language',
-            },
-            {
-              step: 2,
-              layer: 'Agents',
-              action: 'add-detect-language-code agent spawns',
-              detail: 'Reads SKILL.md, language.go, identifies gaps',
-            },
-            {
-              step: 3,
-              layer: 'Skills',
-              action: 'Consults detect-language/SKILL.md',
-              detail: 'Extracts Java signals from Signal Catalogue',
-            },
-            {
-              step: 4,
-              layer: 'Agents',
-              action: 'Agent adds missing signals to code',
-              detail: 'Writes tests, runs gofmt, go test, go build',
-            },
-            {
-              step: 5,
-              layer: 'Output',
-              action: 'Updated binary + registry',
-              detail: 'bin/motadata-host-agent ready for Phase 4',
-            },
-          ].map((item) => (
+        <div className="relative">
+          <div className="flex items-center gap-3 mb-8">
             <motion.div
-              key={item.step}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: item.step * 0.1 }}
-              className="flex gap-4"
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="text-3xl"
             >
-              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center font-bold">
-                {item.step}
-              </div>
-              <div className="flex-1">
-                <div className="font-semibold text-slate-200">{item.action}</div>
-                <div className="text-sm text-slate-400 mt-1">{item.detail}</div>
-              </div>
-              <div className="text-xs font-mono text-slate-500 self-center">
-                {item.layer}
-              </div>
+              ⚡
             </motion.div>
-          ))}
+            <div>
+              <h3 className="text-2xl font-bold">Example Flow</h3>
+              <p className="text-sm text-slate-400">Following <code className="text-emerald-400">/start-code java</code> through the system</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {[
+              { layer: 'Commands', action: 'User types /start-code java', detail: 'Validates "java" is a known language', color: 'from-blue-500 to-cyan-500', step: 1 },
+              { layer: 'Agents', action: 'add-detect-language-code spawns', detail: 'Reads SKILL.md, language.go, identifies gaps', color: 'from-purple-500 to-pink-500', step: 2 },
+              { layer: 'Skills', action: 'Consults detect-language/SKILL.md', detail: 'Extracts Java signals from Signal Catalogue', color: 'from-emerald-500 to-green-500', step: 3 },
+              { layer: 'Agents', action: 'Agent adds missing signals', detail: 'Writes tests, runs gofmt, go test, go build', color: 'from-purple-500 to-pink-500', step: 4 },
+              { layer: 'Output', action: 'Binary + registry updated', detail: 'bin/motadata-host-agent ready for Phase 4', color: 'from-amber-500 to-orange-500', step: 5 },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                whileHover={{ x: 8 }}
+                className="group flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all"
+              >
+                <motion.div
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  className={`flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center font-black text-white shadow-lg`}
+                >
+                  {item.step}
+                </motion.div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-white">{item.action}</div>
+                  <div className="text-sm text-slate-400">{item.detail}</div>
+                </div>
+                <div className={`text-xs font-bold px-3 py-1 rounded-full bg-gradient-to-r ${item.color} text-white opacity-80 group-hover:opacity-100 transition-opacity`}>
+                  {item.layer}
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </motion.div>
     </div>
