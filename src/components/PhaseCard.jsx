@@ -93,14 +93,38 @@ export default function PhaseCard({ phase, index, isSelected, isActive, onSelect
           </div>
 
           {/* Name */}
-          <h3 className="text-2xl font-black mb-2 text-white">
-            {phase.name}
-          </h3>
-
-          {/* Description */}
-          <p className="text-sm text-slate-400 leading-relaxed mb-4 line-clamp-2">
-            {phase.description}
-          </p>
+          {phase.title ? (
+            <>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-bold tracking-wider uppercase text-slate-500">
+                  Currently: {phase.name}
+                </span>
+                {phase.status && (
+                  <motion.span
+                    animate={{ opacity: [0.6, 1, 0.6] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/40 text-emerald-300"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    {phase.status}
+                  </motion.span>
+                )}
+              </div>
+              <h3 className="text-xl font-black mb-2 text-white leading-tight">
+                {phase.title}
+              </h3>
+              <p className="text-sm text-slate-400 leading-relaxed mb-4 line-clamp-3">
+                {phase.oneLiner || phase.description}
+              </p>
+            </>
+          ) : (
+            <>
+              <h3 className="text-2xl font-black mb-2 text-white">{phase.name}</h3>
+              <p className="text-sm text-slate-400 leading-relaxed mb-4 line-clamp-2">
+                {phase.description}
+              </p>
+            </>
+          )}
 
           {/* Model badge */}
           {phase.model && (

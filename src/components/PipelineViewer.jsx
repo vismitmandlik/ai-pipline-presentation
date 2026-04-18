@@ -67,17 +67,75 @@ const PHASES = [
     id: 'phase3',
     order: 3,
     name: 'Code',
+    title: 'Language Detection Engine',
+    status: 'Active',
+    oneLiner: 'Dynamically identifies the programming language of every running service — with zero hardcoded assumptions.',
     command: '/start-code <lang>',
     emoji: '💻',
     gradient: 'from-emerald-500 via-green-500 to-lime-500',
     glowColor: 'rgba(16, 185, 129, 0.5)',
     accentColor: '#10b981',
-    description: 'Close gaps in language.go by adding missing detection signals',
+    description: 'Adds or improves detection for one programming language at a time. Each language lives in its own module — no monolithic files, no hardcoded lists.',
     keyActivities: [
-      'Compare coverage vs. catalogue',
-      'Add missing signals',
-      'Write test cases',
-      'Build and verify',
+      'Runtime validation (probes before touching files)',
+      'Modular lang_<name>.go per language',
+      'Auto-registration via init()',
+      'Build verification (gofmt → test → build)',
+    ],
+    howItWorks: [
+      {
+        title: 'Runtime Validation',
+        detail: 'Probes the system before touching any file:',
+        bullets: [
+          'Checks LANGUAGE_DETECTION_REGISTRY.md (already registered = valid)',
+          'Runs `which <binary>` to confirm runtime is installed',
+          'Queries OS package manager (apt / brew / winget) as fallback',
+          'If all probes fail → rejected immediately, zero file I/O',
+        ],
+      },
+      {
+        title: 'Modular Implementation',
+        detail: 'Creates internal/system/lang_<name>.go implementing 5 detection stages:',
+        bullets: [
+          'Environ  — runtime env vars  (e.g. PYTHONPATH, NODE_ENV)',
+          'CmdLine  — interpreter names (e.g. python3, node, java)',
+          'Files    — project markers   (e.g. requirements.txt, go.mod)',
+          'Maps     — shared libraries  (e.g. libpython, libjvm.so)',
+          'ExePath  — install paths     (e.g. /.pyenv/, /go/bin/)',
+        ],
+      },
+      {
+        title: 'Auto-Registration',
+        detail: 'Each lang_<name>.go calls Register() in its init() — the binary discovers all languages automatically at startup. No central list to maintain.',
+        bullets: [],
+      },
+      {
+        title: 'Idempotency',
+        detail: 'Before writing, checks if lang_<name>.go already exists. Duplicate implementations are never created.',
+        bullets: [],
+      },
+      {
+        title: 'Build Verification',
+        detail: 'Runs gofmt → go test → go build before declaring success. Does not exit until all three pass.',
+        bullets: [],
+      },
+      {
+        title: 'Registry Sync',
+        detail: 'Updates LANGUAGE_DETECTION_REGISTRY.md with coverage per stage (✅ / ✗) and OS compatibility notes. This is the single source of truth for /list-languages.',
+        bullets: [],
+      },
+    ],
+    filesTouched: [
+      { path: 'internal/system/lang_<name>.go', note: 'new detector module' },
+      { path: 'internal/system/language_test.go', note: 'new test cases' },
+      { path: 'LANGUAGE_DETECTION_REGISTRY.md', note: 'coverage table updated' },
+      { path: 'CLAUDE.md', note: 'change log updated' },
+    ],
+    examples: [
+      { cmd: '/start-code kotlin', result: 'adds Kotlin detection', success: true },
+      { cmd: '/start-code swift', result: 'adds Swift detection', success: true },
+      { cmd: '/start-code assembly', result: 'adds Assembly/NASM detection', success: true },
+      { cmd: '/start-code bhailang', result: 'rejected (not a real language)', success: false },
     ],
     output: 'motadata-host-agent',
     outputIcon: '📦',
@@ -257,105 +315,6 @@ export default function PipelineViewer({ selectedPhase, onSelectPhase, animation
         </div>
       </div>
 
-      {/* Model Strategy Overview */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="relative rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-slate-900/80 via-slate-900/60 to-slate-900/80 backdrop-blur-xl p-8"
-      >
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl" />
-
-        <div className="relative">
-          <div className="flex items-center gap-3 mb-2">
-            <motion.div
-              animate={{ rotate: [0, 360] }}
-              transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-              className="text-3xl"
-            >
-              🎯
-            </motion.div>
-            <div>
-              <h3 className="text-2xl font-bold">Model Selection Strategy</h3>
-              <p className="text-sm text-slate-400">Right model for the right job — optimizing quality, speed, and cost</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-            {PHASES.map((phase, idx) => {
-              const tier = MODEL_TIERS[phase.model.tier];
-              return (
-                <motion.div
-                  key={phase.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: idx * 0.1 }}
-                  whileHover={{ y: -4, scale: 1.02 }}
-                  className="relative overflow-hidden rounded-2xl border border-white/10 p-5 cursor-pointer"
-                >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${tier.gradient} opacity-10`} />
-                  <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-30" style={{ background: tier.glow }} />
-
-                  <div className="relative">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[10px] font-bold tracking-widest uppercase text-slate-400">
-                        Phase {phase.order}
-                      </span>
-                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-md bg-gradient-to-r ${tier.gradient} text-white uppercase`}>
-                        {tier.label}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3 mb-3">
-                      <div
-                        className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tier.gradient} flex items-center justify-center text-2xl shadow-lg`}
-                        style={{ boxShadow: `0 0 20px ${tier.glow}` }}
-                      >
-                        {tier.icon}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-xs text-slate-400 truncate">{phase.name}</div>
-                        <div className={`text-sm font-black bg-gradient-to-r ${tier.gradient} bg-clip-text text-transparent truncate`}>
-                          {phase.model.name}
-                        </div>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-slate-400 leading-relaxed line-clamp-4">
-                      {phase.model.reason}
-                    </p>
-
-                    <div className="mt-3 pt-3 border-t border-white/10 text-[10px] text-slate-500 italic">
-                      {tier.tagline}
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          {/* Legend row */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🧠</span>
-              <span><b className="text-white">Opus</b> — Deep reasoning tasks</span>
-            </div>
-            <span className="text-slate-700">•</span>
-            <div className="flex items-center gap-2">
-              <span className="text-lg">⚡</span>
-              <span><b className="text-white">Sonnet</b> — Balanced execution</span>
-            </div>
-            <span className="text-slate-700">•</span>
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🚀</span>
-              <span><b className="text-white">Haiku</b> — Fast validation</span>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
       {/* Expanded details */}
       <AnimatePresence>
         {selectedPhase && (
@@ -406,12 +365,31 @@ function PhaseDetails({ phase, onClose }) {
               {phase.emoji}
             </motion.div>
             <div>
-              <div className="text-slate-400 text-sm font-semibold tracking-widest uppercase">
-                Phase {phase.order}
+              <div className="flex items-center gap-3 text-slate-400 text-sm font-semibold tracking-widest uppercase">
+                <span>Phase {phase.order}</span>
+                {phase.title && (
+                  <>
+                    <span className="text-slate-600">·</span>
+                    <span>Currently: {phase.name}</span>
+                  </>
+                )}
+                {phase.status && (
+                  <motion.span
+                    animate={{ opacity: [0.6, 1, 0.6] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 normal-case tracking-normal"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    {phase.status}
+                  </motion.span>
+                )}
               </div>
               <h3 className={`text-4xl font-black bg-gradient-to-r ${phase.gradient} bg-clip-text text-transparent`}>
-                {phase.name}
+                {phase.title || phase.name}
               </h3>
+              {phase.oneLiner && (
+                <p className="text-slate-300 mt-2 max-w-2xl">{phase.oneLiner}</p>
+              )}
             </div>
           </div>
           <motion.button
@@ -592,6 +570,135 @@ function PhaseDetails({ phase, onClose }) {
             </div>
           </div>
         </div>
+
+        {/* How It Works */}
+        {phase.howItWorks && phase.howItWorks.length > 0 && (
+          <div className="mt-10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className={`h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-white/20`} />
+              <h4 className={`text-lg font-black bg-gradient-to-r ${phase.gradient} bg-clip-text text-transparent tracking-wide`}>
+                HOW IT WORKS
+              </h4>
+              <div className={`h-px flex-1 bg-gradient-to-l from-transparent via-white/20 to-white/20`} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {phase.howItWorks.map((step, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.08 }}
+                  whileHover={{ y: -2, scale: 1.01 }}
+                  className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 p-5 transition-all"
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br ${phase.gradient} flex items-center justify-center font-black text-white text-sm shadow-lg`}
+                    >
+                      {i + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h5 className="font-bold text-white mb-2">{step.title}</h5>
+                      <p className="text-sm text-slate-400 leading-relaxed mb-2">
+                        {step.detail}
+                      </p>
+                      {step.bullets && step.bullets.length > 0 && (
+                        <ul className="space-y-1.5 mt-2">
+                          {step.bullets.map((bullet, bi) => (
+                            <li key={bi} className="flex items-start gap-2 text-xs text-slate-300">
+                              <span className={`mt-1 w-1 h-1 rounded-full bg-gradient-to-r ${phase.gradient} flex-shrink-0`} />
+                              <span className="font-mono leading-relaxed">{bullet}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Files Touched + Examples grid */}
+        {(phase.filesTouched || phase.examples) && (
+          <div className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Files Touched */}
+            {phase.filesTouched && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="relative overflow-hidden rounded-2xl border border-white/10 bg-slate-800/40 p-6"
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-xl">📁</span>
+                  <h4 className="text-sm font-black tracking-widest uppercase text-slate-300">
+                    Files Touched
+                  </h4>
+                </div>
+                <div className="space-y-2">
+                  {phase.filesTouched.map((file, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      whileHover={{ x: 4 }}
+                      className="flex items-center gap-3 p-2.5 rounded-lg bg-black/30 border border-white/5 hover:border-white/10 transition-all"
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${phase.gradient}`} />
+                      <code className="text-xs font-mono text-emerald-400 flex-shrink-0">
+                        {file.path}
+                      </code>
+                      <span className="text-xs text-slate-500 truncate">— {file.note}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Examples */}
+            {phase.examples && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="relative overflow-hidden rounded-2xl border border-white/10 bg-slate-800/40 p-6"
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-xl">⚡</span>
+                  <h4 className="text-sm font-black tracking-widest uppercase text-slate-300">
+                    Examples
+                  </h4>
+                </div>
+                <div className="space-y-2">
+                  {phase.examples.map((ex, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      whileHover={{ x: -4 }}
+                      className={`flex items-center gap-3 p-2.5 rounded-lg border transition-all ${
+                        ex.success
+                          ? 'bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10'
+                          : 'bg-red-500/5 border-red-500/20 hover:bg-red-500/10'
+                      }`}
+                    >
+                      <code className="text-xs font-mono text-white font-semibold flex-shrink-0">
+                        {ex.cmd}
+                      </code>
+                      <span className="text-xs text-slate-400 flex-shrink-0">→</span>
+                      <span className={`text-xs flex items-center gap-1 ${ex.success ? 'text-emerald-300' : 'text-red-300'}`}>
+                        <span>{ex.success ? '✓' : '✗'}</span>
+                        <span className="truncate">{ex.result}</span>
+                      </span>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </div>
+        )}
       </div>
     </motion.div>
   );
