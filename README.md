@@ -1,6 +1,6 @@
-# Claude Code Architecture Visualization
+# APM AI Pipeline Architecture Visualization
 
-An interactive, modern 2D animated website that visualizes the complete Claude Code 4-phase pipeline architecture with the 3-layer model (Commands → Agents → Skills).
+An interactive, modern 2D animated website that visualizes the complete APM services detection 4-phase pipeline architecture with the 3-layer model (Commands → Agents → Skills).
 
 ## 🎯 Features
 
