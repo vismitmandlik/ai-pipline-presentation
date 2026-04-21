@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Analytics } from '@vercel/analytics/react';
 import PipelineViewer from './components/PipelineViewer';
 import ArchitectureLayerViewer from './components/ArchitectureLayerViewer';
 import RoadmapViewer from './components/RoadmapViewer';
@@ -199,6 +200,9 @@ export default function App() {
           <Legend />
         </div>
       </footer>
+
+      {/* Vercel Analytics */}
+      <Analytics />
     </div>
   );
 }
